@@ -38,12 +38,16 @@ export default class SimpleModuleManager {
 
     receiveMessage(event) {
         switch(event.data.message) {
-            case "addModule": 
-                this.addModuleCommand(event.data.value);
+            case "loadModule": 
+                this.loadModuleCommand(event.data.value);
                 break;
 
-            case "removeModule": 
-                this.removeModuleCommand(event.data.value);
+            case "unloadModule": 
+                this.unloadModuleCommand(event.data.value);
+                break;
+
+            case "switchModule": 
+                this.switchModuleCommand(event.data.value);
                 break;
 
             case "openWorkspace": 
@@ -60,15 +64,13 @@ export default class SimpleModuleManager {
         }
     }
 
-    addModuleCommand(commandData) {
-        let moduleName = commandData.moduleName;
-        if(!moduleName) {
-            apogeeUserAlert("Add module failed: missing module name.");
+    loadModuleCommand(messageData) {
+        if(!messageData.moduleIdentifier) {
+            apogeeUserAlert("Load module failed: missing module identifier.");
             return;
         }
-
         try {
-            this.addModule(moduleName);
+            this.loadModule(messageData.moduleIdentifier,messageData.moduleName);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -77,15 +79,14 @@ export default class SimpleModuleManager {
         }
     }
 
-    removeModuleCommand(commandData) {
-        let moduleName = commandData.moduleName;
-        if(!moduleName) {
-            apogeeUserAlert("Remove module failed: missing module name.");
+    unloadModuleCommand(messageData) {
+        if(!messageData.moduleIdentifier) {
+            apogeeUserAlert("Unload module failed: missing module identifier.");
             return;
         }
 
         try {
-            this.removeModule(moduleName);
+            this.unloadModule(messageData.moduleIdentifier);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -94,8 +95,12 @@ export default class SimpleModuleManager {
         }
     }
 
-    openWorkspaceCommand(commandData) {
-        let workspaceUrl = commandData.workspaceUrl;
+    switchModuleCommand(messageData) {
+        //implement thisS!!!
+    }
+
+    openWorkspaceCommand(messageData) {
+        let workspaceUrl = messageData.workspaceUrl;
         if(!workspaceUrl) {
             apogeeUserAlert("Open workspace failed: missing workspace URL.");
             return;
@@ -111,8 +116,8 @@ export default class SimpleModuleManager {
         }
     }
 
-    openLinkCommand(commandData) {
-        let linkUrl = commandData.linkUrl;
+    openLinkCommand(messageData) {
+        let linkUrl = messageData.linkUrl;
         if(!linkUrl) {
             apogeeUserAlert("Open link failed: missing link URL.");
             return;
@@ -138,23 +143,23 @@ export default class SimpleModuleManager {
     //--------------------------
 
 
-    addModule(npmModuleName,apogeeName) {
+    loadModule(moduleIdentifier,moduleName) {
         let commandData = {};
         commandData.type = "addLink";
         commandData.data = {
             entryType: this.getModuleType(),
-            url: npmModuleName,
-            nickname: apogeeName
+            url: moduleIdentifier, //url for ES module, module name for NPM module
+            nickname: moduleName
         };
         return this.app.executeCommand(commandData);
     }
 
-    removeModule(npmModuleName) {
+    unloadModule(moduleIdentifier) {
         let commandData = {};
         commandData.type = "removeLink";
         commandData.data = {
             entryType: this.getModuleType(),
-            url: npmModuleName
+            url: moduleIdentifier //url for ES module, module name for NPM module
         };
         return this.app.executeCommand(commandData);
     }
