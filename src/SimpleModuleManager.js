@@ -46,8 +46,8 @@ export default class SimpleModuleManager {
                 this.unloadModuleCommand(event.data.value);
                 break;
 
-            case "switchModule": 
-                this.switchModuleCommand(event.data.value);
+            case "updateModule": 
+                this.updateModuleCommand(event.data.value);
                 break;
 
             case "openWorkspace": 
@@ -79,6 +79,25 @@ export default class SimpleModuleManager {
         }
     }
 
+    updateModuleCommand(messageData) {
+        if(!messageData.oldIdentifier) {
+            apogeeUserAlert("Update module failed: missing original module identifier.");
+            return;
+        }
+        if(!messageData.newIdentifier) {
+            apogeeUserAlert("Update module failed: missing new module identifier.");
+            return;
+        }
+        try {
+            this.updateModule(messageData.newIdentifier,messageData.oldIdentifier);
+        }
+        catch(error) {
+            if(error.stack) console.error(error.stack);
+            let errorMsg = error.message ? error.message : error.toString();
+            apogeeUserAlert("Error adding module: " + errorMsg);
+        }
+    }
+
     unloadModuleCommand(messageData) {
         if(!messageData.moduleIdentifier) {
             apogeeUserAlert("Unload module failed: missing module identifier.");
@@ -93,10 +112,6 @@ export default class SimpleModuleManager {
             let errorMsg = error.message ? error.message : error.toString();
             apogeeUserAlert("Error removing module: " + errorMsg);
         }
-    }
-
-    switchModuleCommand(messageData) {
-        //implement thisS!!!
     }
 
     openWorkspaceCommand(messageData) {
@@ -151,6 +166,20 @@ export default class SimpleModuleManager {
             url: moduleIdentifier, //url for ES module, module name for NPM module
             nickname: moduleName
         };
+        return this.app.executeCommand(commandData);
+    }
+
+    /** This updates the module, changing the "identifier" which is the url for an ES modulea and the
+     * module name for an NPM module. This is only intended for ES modules, to update the url. To update
+     * an NPM module it must be reinstalled in the app, and the reference entry does not change. */
+    updateModule(newModuleIdentifier,oldModuleIdentifier) {
+        let commandData = {};
+        commandData.type = "updateLink";
+        commandData.data = {
+            entryType: this.getModuleType(),
+            newUrl: newModuleIdentifier, //url for ES module, module name for NPM module
+        };
+        commandData.initialUrl = oldModuleIdentifier; //url for ES module, module name for NPM module
         return this.app.executeCommand(commandData);
     }
 
