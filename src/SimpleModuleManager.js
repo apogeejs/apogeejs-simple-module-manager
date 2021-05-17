@@ -9,8 +9,9 @@ export default class SimpleModuleManager {
     /** This opens the module manager window and sets up communication with it. */
     openModuleManager() {
         try {
+            let appModulesData = this.getAppModulesData();
             window.addEventListener("message",this.messageListener);
-            this.remoteWindow = window.open(this.getModuleManagerUrl(), 'Module Manager', 'width=512,height=512,left=200,top=100');
+            this.remoteWindow = window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager', 'width=512,height=512,left=200,top=100');
             return true;
         }
         catch(error) {
@@ -28,8 +29,20 @@ export default class SimpleModuleManager {
     // Protected Methods
     //==========================
 
-    getModuleManagerUrl() {
-        return REMOTE_WEB_MODULE_MANAGER_URL;
+    getAppModulesData() {
+        let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
+        let moduleList = referenceManager.getModuleList(this.getModuleType());
+        let appModuleData = {
+            app: "TBD",
+            version: "TBD",
+            moduleType: this.getModuleType(),
+            modules: moduleList
+        }
+        return appModuleData;
+    }
+
+    getModuleManagerUrl(appModulesData) {
+        return REMOTE_WEB_MODULE_MANAGER_URL + "?appModules="+ JSON.stringify(appModulesData);
     }
 
     getModuleType() {
@@ -177,7 +190,7 @@ export default class SimpleModuleManager {
         commandData.type = "updateLink";
         commandData.data = {
             entryType: this.getModuleType(),
-            newUrl: newModuleIdentifier, //url for ES module, module name for NPM module
+            url: newModuleIdentifier, //url for ES module, module name for NPM module
         };
         commandData.initialUrl = oldModuleIdentifier; //url for ES module, module name for NPM module
         return this.app.executeCommand(commandData);
@@ -185,16 +198,14 @@ export default class SimpleModuleManager {
 
     unloadModule(moduleIdentifier) {
         let commandData = {};
-        commandData.type = "removeLink";
-        commandData.data = {
-            entryType: this.getModuleType(),
-            url: moduleIdentifier //url for ES module, module name for NPM module
-        };
+        commandData.type = "deleteLink";
+        commandData.entryType = this.getModuleType();
+        commandData.url = moduleIdentifier; //note this is module name for npm
         return this.app.executeCommand(commandData);
     }
 
 }
 
 
-const REMOTE_WEB_MODULE_MANAGER_URL = "http://localhost:8888/test/modules/moduleMgr.html";
+const REMOTE_WEB_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
 const WEB_MODULE_TYPE = "es module";
