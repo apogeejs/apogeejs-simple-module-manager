@@ -2,7 +2,8 @@
 export default class SimpleModuleManager {
     constructor(app) {
         this.app = app;
-        this.remoteWindow = null;
+        this.opened = false;
+        this.childWindowId = apogeeutil.getUniqueString();
         this.messageListener = event => this.receiveMessage(event);
     }
 
@@ -11,12 +12,11 @@ export default class SimpleModuleManager {
         try {
             let appModulesData = this.getAppModulesData();
             window.addEventListener("message",this.messageListener);
-            this.remoteWindow = window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager', 'width=512,height=512,left=200,top=100');
+            window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager', 'width=512,height=512,left=200,top=100');
             return true;
         }
         catch(error) {
             window.removeEventListener("message",this.messageListener);
-            this.remoteWindow = null;
             
             if(error.stack) console.error(error.stack);
             let errorMsg = error.message ? error.message : error.toString();
@@ -42,7 +42,7 @@ export default class SimpleModuleManager {
     }
 
     getModuleManagerUrl(appModulesData) {
-        return REMOTE_WEB_MODULE_MANAGER_URL + "?appModules="+ JSON.stringify(appModulesData);
+        return REMOTE_WEB_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}`;
     }
 
     getModuleType() {
@@ -50,31 +50,39 @@ export default class SimpleModuleManager {
     }
 
     receiveMessage(event) {
+        //make sure this is from the right window
+        if(!this.isMyMessage(event)) return;
+
         switch(event.data.message) {
             case "loadModule": 
-                this.loadModuleCommand(event.data.value);
+                this.loadModuleCommand(event.data.value.messageData);
                 break;
 
             case "unloadModule": 
-                this.unloadModuleCommand(event.data.value);
+                this.unloadModuleCommand(event.data.value.messageData);
                 break;
 
             case "updateModule": 
-                this.updateModuleCommand(event.data.value);
+                this.updateModuleCommand(event.data.value.messageData);
                 break;
 
             case "openWorkspace": 
-                this.openWorkspaceCommand(event.data.value);
+                this.openWorkspaceCommand(event.data.value.messageData);
                 break;
 
             case "openLink": 
-                this.openLinkCommand(event.data.value);
+                this.openLinkCommand(event.data.value.messageData);
                 break;
 
             case "closeModuleManager":
                 this.closeModuleManager();
                 break;
         }
+    }
+
+    isMyMessage(event) {
+        let payload = event.data.value;
+        return ((payload)&&(payload.windowId == this.childWindowId));
     }
 
     loadModuleCommand(messageData) {
@@ -163,7 +171,6 @@ export default class SimpleModuleManager {
 
     closeModuleManager() {
         window.removeEventListener("message",this.messageListener);
-        this.remoteWindow = null;
     }
 
     //--------------------------
@@ -203,6 +210,8 @@ export default class SimpleModuleManager {
         commandData.url = moduleIdentifier; //note this is module name for npm
         return this.app.executeCommand(commandData);
     }
+
+    
 
 }
 
