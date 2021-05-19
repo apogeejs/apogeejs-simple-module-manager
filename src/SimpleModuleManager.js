@@ -2,22 +2,18 @@
 export default class SimpleModuleManager {
     constructor(app) {
         this.app = app;
-        this.opened = false;
         this.childWindowId = apogeeutil.getUniqueString();
-        this.messageListener = event => this.receiveMessage(event);
+        window.addEventListener("message",event => this.receiveMessage(event));
     }
 
     /** This opens the module manager window and sets up communication with it. */
     openModuleManager() {
         try {
             let appModulesData = this.getAppModulesData();
-            window.addEventListener("message",this.messageListener);
-            window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager', 'width=512,height=512,left=200,top=100');
+            window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager - ' + this.childWindowId, 'width=768,height=768,left=200,top=100');
             return true;
         }
-        catch(error) {
-            window.removeEventListener("message",this.messageListener);
-            
+        catch(error) {            
             if(error.stack) console.error(error.stack);
             let errorMsg = error.message ? error.message : error.toString();
             apogeeUserAlert("Error opening module manager: " + errorMsg);
@@ -42,7 +38,7 @@ export default class SimpleModuleManager {
     }
 
     getModuleManagerUrl(appModulesData) {
-        return REMOTE_WEB_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}`;
+        return REMOTE_WEB_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}&moduleType=${this.getModuleType()}`;
     }
 
     getModuleType() {
@@ -53,45 +49,42 @@ export default class SimpleModuleManager {
         //make sure this is from the right window
         if(!this.isMyMessage(event)) return;
 
+        let commandData = event.data.value.commandData; 
         switch(event.data.message) {
             case "loadModule": 
-                this.loadModuleCommand(event.data.value.messageData);
+                this.loadModuleCommand(commandData);
                 break;
 
             case "unloadModule": 
-                this.unloadModuleCommand(event.data.value.messageData);
+                this.unloadModuleCommand(commandData);
                 break;
 
             case "updateModule": 
-                this.updateModuleCommand(event.data.value.messageData);
+                this.updateModuleCommand(commandData);
                 break;
 
             case "openWorkspace": 
-                this.openWorkspaceCommand(event.data.value.messageData);
+                this.openWorkspaceCommand(commandData);
                 break;
 
             case "openLink": 
-                this.openLinkCommand(event.data.value.messageData);
-                break;
-
-            case "closeModuleManager":
-                this.closeModuleManager();
+                this.openLinkCommand(commandData);
                 break;
         }
     }
 
     isMyMessage(event) {
-        let payload = event.data.value;
-        return ((payload)&&(payload.windowId == this.childWindowId));
+        let messageData = event.data.value;
+        return ((messageData)&&(messageData.windowId == this.childWindowId));
     }
 
-    loadModuleCommand(messageData) {
-        if(!messageData.moduleIdentifier) {
+    loadModuleCommand(commandData) {
+        if(!commandData.moduleIdentifier) {
             apogeeUserAlert("Load module failed: missing module identifier.");
             return;
         }
         try {
-            this.loadModule(messageData.moduleIdentifier,messageData.moduleName);
+            this.loadModule(commandData.moduleIdentifier,commandData.moduleName);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -100,17 +93,17 @@ export default class SimpleModuleManager {
         }
     }
 
-    updateModuleCommand(messageData) {
-        if(!messageData.oldIdentifier) {
+    updateModuleCommand(commandData) {
+        if(!commandData.oldIdentifier) {
             apogeeUserAlert("Update module failed: missing original module identifier.");
             return;
         }
-        if(!messageData.newIdentifier) {
+        if(!commandData.newIdentifier) {
             apogeeUserAlert("Update module failed: missing new module identifier.");
             return;
         }
         try {
-            this.updateModule(messageData.newIdentifier,messageData.oldIdentifier);
+            this.updateModule(commandData.newIdentifier,commandData.oldIdentifier);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -119,14 +112,14 @@ export default class SimpleModuleManager {
         }
     }
 
-    unloadModuleCommand(messageData) {
-        if(!messageData.moduleIdentifier) {
+    unloadModuleCommand(commandData) {
+        if(!commandData.moduleIdentifier) {
             apogeeUserAlert("Unload module failed: missing module identifier.");
             return;
         }
 
         try {
-            this.unloadModule(messageData.moduleIdentifier);
+            this.unloadModule(commandData.moduleIdentifier);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -135,8 +128,8 @@ export default class SimpleModuleManager {
         }
     }
 
-    openWorkspaceCommand(messageData) {
-        let workspaceUrl = messageData.workspaceUrl;
+    openWorkspaceCommand(commandData) {
+        let workspaceUrl = commandData.workspaceUrl;
         if(!workspaceUrl) {
             apogeeUserAlert("Open workspace failed: missing workspace URL.");
             return;
@@ -152,8 +145,8 @@ export default class SimpleModuleManager {
         }
     }
 
-    openLinkCommand(messageData) {
-        let linkUrl = messageData.linkUrl;
+    openLinkCommand(commandData) {
+        let linkUrl = commandData.linkUrl;
         if(!linkUrl) {
             apogeeUserAlert("Open link failed: missing link URL.");
             return;
@@ -167,10 +160,6 @@ export default class SimpleModuleManager {
             let errorMsg = error.message ? error.message : error.toString();
             apogeeUserAlert("Error opening link: " + errorMsg);
         }
-    }
-
-    closeModuleManager() {
-        window.removeEventListener("message",this.messageListener);
     }
 
     //--------------------------
