@@ -2,22 +2,21 @@
 export default class SimpleModuleManager {
     constructor(app) {
         this.app = app;
+        this.childWindow = null;
         this.childWindowId = apogeeutil.getUniqueString();
         window.addEventListener("message",event => this.receiveMessage(event));
     }
 
     /** This opens the module manager window and sets up communication with it. */
-    openModuleManager() {
+    async openModuleManager() {
         try {
-            let appModulesData = this.getAppModulesData();
-            window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager - ' + this.childWindowId, 'width=768,height=768,left=200,top=100');
-            return true;
+            let appModulesData = await this.getAppModulesData();
+            this.childWindow = window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager - ' + this.childWindowId, 'width=768,height=768,left=200,top=100');
         }
         catch(error) {            
             if(error.stack) console.error(error.stack);
             let errorMsg = error.message ? error.message : error.toString();
             apogeeUserAlert("Error opening module manager: " + errorMsg);
-            return false;
         }
     }
 
@@ -25,7 +24,7 @@ export default class SimpleModuleManager {
     // Protected Methods
     //==========================
 
-    getAppModulesData() {
+    async getAppModulesData() {
         let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
         let moduleList = referenceManager.getModuleList(this.getModuleType());
         let appModuleData = {
@@ -38,7 +37,7 @@ export default class SimpleModuleManager {
     }
 
     getModuleManagerUrl(appModulesData) {
-        return REMOTE_WEB_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}&moduleType=${this.getModuleType()}`;
+        return REMOTE_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}&moduleType=${this.getModuleType()}&callingUrl=${location.href}`;
     }
 
     getModuleType() {
@@ -73,6 +72,13 @@ export default class SimpleModuleManager {
         }
     }
 
+    async sendModulesUpdate() {
+        if(this.childWindow) {
+            let appModulesData = await this.getAppModulesData();
+            this.childWindow.postMessage({message: "appModules", value: appModulesData},REMOTE_MODULE_MANAGER_URL);
+        }
+    }
+
     isMyMessage(event) {
         let messageData = event.data.value;
         return ((messageData)&&(messageData.windowId == this.childWindowId));
@@ -84,7 +90,10 @@ export default class SimpleModuleManager {
             return;
         }
         try {
-            this.loadModule(commandData.moduleIdentifier,commandData.moduleName);
+            let cmdDone = this.loadModule(commandData.moduleIdentifier,commandData.moduleName);
+            if(cmdDone) {
+                this.sendModulesUpdate();
+            }
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -103,7 +112,10 @@ export default class SimpleModuleManager {
             return;
         }
         try {
-            this.updateModule(commandData.newIdentifier,commandData.oldIdentifier);
+            let cmdDone = this.updateModule(commandData.newIdentifier,commandData.oldIdentifier);
+            if(cmdDone) {
+                this.sendModulesUpdate();
+            }
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -119,7 +131,10 @@ export default class SimpleModuleManager {
         }
 
         try {
-            this.unloadModule(commandData.moduleIdentifier);
+            let cmdDone = this.unloadModule(commandData.moduleIdentifier);
+            if(cmdDone) {
+                this.sendModulesUpdate();
+            }
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -205,5 +220,5 @@ export default class SimpleModuleManager {
 }
 
 
-const REMOTE_WEB_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
+const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
 const WEB_MODULE_TYPE = "es module";
