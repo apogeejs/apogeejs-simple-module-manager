@@ -37,7 +37,11 @@ export default class SimpleModuleManager {
     }
 
     getModuleManagerUrl(appModulesData) {
-        return REMOTE_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}&moduleType=${this.getModuleType()}&callingUrl=${location.href}`;
+        let appModules = JSON.stringify(appModulesData);
+        let moduleType = this.getModuleType();
+        let windowId = this.childWindowId;
+        let callingUrl = location.href;
+        return REMOTE_MODULE_MANAGER_URL + `?appModules=${appModules}&windowId=${windowId}&moduleType=${moduleType}&callingUrl=${callingUrl}`;
     }
 
     getModuleType() {
@@ -84,6 +88,10 @@ export default class SimpleModuleManager {
         return ((messageData)&&(messageData.windowId == this.childWindowId));
     }
 
+    //--------------------
+    // message handlers
+    //--------------------
+
     loadModuleCommand(commandData) {
         if(!commandData.moduleIdentifier) {
             apogeeUserAlert("Load module failed: missing module identifier.");
@@ -112,7 +120,7 @@ export default class SimpleModuleManager {
             return;
         }
         try {
-            let cmdDone = this.updateModule(commandData.newIdentifier,commandData.oldIdentifier);
+            let cmdDone = this.updateModule(commandData.newIdentifier,commandData.oldIdentifier,commandData.moduleName);
             if(cmdDone) {
                 this.sendModulesUpdate();
             }
@@ -181,7 +189,6 @@ export default class SimpleModuleManager {
     // Command Execution Functions
     //--------------------------
 
-
     loadModule(moduleIdentifier,moduleName) {
         let commandData = {};
         commandData.type = "addLink";
@@ -196,12 +203,13 @@ export default class SimpleModuleManager {
     /** This updates the module, changing the "identifier" which is the url for an ES modulea and the
      * module name for an NPM module. This is only intended for ES modules, to update the url. To update
      * an NPM module it must be reinstalled in the app, and the reference entry does not change. */
-    updateModule(newModuleIdentifier,oldModuleIdentifier) {
+    updateModule(newModuleIdentifier,oldModuleIdentifier,moduleName) {
         let commandData = {};
         commandData.type = "updateLink";
         commandData.data = {
             entryType: this.getModuleType(),
             url: newModuleIdentifier, //url for ES module, module name for NPM module
+            nickname: moduleName,
         };
         commandData.initialUrl = oldModuleIdentifier; //url for ES module, module name for NPM module
         return this.app.executeCommand(commandData);
