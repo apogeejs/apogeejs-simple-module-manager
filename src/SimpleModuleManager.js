@@ -1,7 +1,13 @@
-/** This class manages addition and removal of apogee modules for a standard web platform apogee application. */
+/** This class manages addition and removal of apogee modules for a standard web platform apogee application. 
+ * Options:
+ *    - openLinkFromApp: defaults to false. If true, opening the workspace and web links happens from the app context. Otherwise
+ *        it is done directly from the remote window.
+ * 
+*/
 export default class SimpleModuleManager {
-    constructor(app) {
+    constructor(app,options) {
         this.app = app;
+        this.options = options ? options : {};
         this.childWindow = null;
         this.childWindowId = apogeeutil.getUniqueString();
         window.addEventListener("message",event => this.receiveMessage(event));
@@ -40,8 +46,9 @@ export default class SimpleModuleManager {
         let appModules = JSON.stringify(appModulesData);
         let moduleType = this.getModuleType();
         let windowId = this.childWindowId;
-        let callingUrl = location.href;
-        return REMOTE_MODULE_MANAGER_URL + `?appModules=${appModules}&windowId=${windowId}&moduleType=${moduleType}&callingUrl=${callingUrl}`;
+        let callingUrl = location.protocol + "//" + location.host + location.pathname;
+        let openWindow = this.options.openLinkFromApp ? "app" : "local";
+        return REMOTE_MODULE_MANAGER_URL + `?appModules=${appModules}&windowId=${windowId}&moduleType=${moduleType}&callingUrl=${callingUrl}&openWindow=${openWindow}`;
     }
 
     getModuleType() {
