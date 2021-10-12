@@ -202,7 +202,7 @@ export default class SimpleModuleManager {
         commandData.data = {
             entryType: this.getModuleType(),
             url: moduleIdentifier, //url for ES module, module name for NPM module
-            nickname: moduleName
+            name: moduleName
         };
         return this.app.executeCommand(commandData);
     }
@@ -216,7 +216,7 @@ export default class SimpleModuleManager {
         commandData.data = {
             entryType: this.getModuleType(),
             url: newModuleIdentifier, //url for ES module, module name for NPM module
-            nickname: moduleName,
+            name: moduleName,
         };
         commandData.initialUrl = oldModuleIdentifier; //url for ES module, module name for NPM module
         return this.app.executeCommand(commandData);
@@ -236,4 +236,4 @@ export default class SimpleModuleManager {
 
 
 const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
-const WEB_MODULE_TYPE = "es module";
+const WEB_MODULE_TYPE = "web apogee module";
