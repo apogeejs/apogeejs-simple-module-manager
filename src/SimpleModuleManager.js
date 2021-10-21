@@ -32,27 +32,24 @@ export default class SimpleModuleManager {
 
     async getAppModulesData() {
         let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
-        let moduleList = referenceManager.getModuleList(this.getModuleType());
+        let moduleList = referenceManager.getModuleList(MODULE_TYPE);
         let appModuleData = {
             app: "TBD",
             version: "TBD",
-            moduleType: this.getModuleType(),
             modules: moduleList
         }
         return appModuleData;
     }
 
     getModuleManagerUrl(appModulesData) {
-        let appModules = JSON.stringify(appModulesData);
-        let moduleType = this.getModuleType();
+        let platform = this.getPlatform();
         let windowId = this.childWindowId;
         let callingUrl = location.protocol + "//" + location.host + location.pathname;
-        let openWindow = this.options.openLinkFromApp ? "app" : "local";
-        return REMOTE_MODULE_MANAGER_URL + `?appModules=${appModules}&windowId=${windowId}&moduleType=${moduleType}&callingUrl=${callingUrl}&openWindow=${openWindow}`;
+        return REMOTE_MODULE_MANAGER_URL + `?windowId=${windowId}&platform=${platform}&callingUrl=${callingUrl}`;
     }
 
-    getModuleType() {
-        return WEB_MODULE_TYPE;
+    getPlatform() {
+        return ES_PLATFORM;
     }
 
     receiveMessage(event) {
@@ -61,6 +58,10 @@ export default class SimpleModuleManager {
 
         let commandData = event.data.value.commandData; 
         switch(event.data.message) {
+            case "opened":
+                this.sendModulesUpdate(); 
+                break;
+
             case "loadModule": 
                 this.loadModuleCommand(commandData);
                 break;
@@ -79,6 +80,10 @@ export default class SimpleModuleManager {
 
             case "openLink": 
                 this.openLinkCommand(commandData);
+                break;
+
+            case "closed":
+                console.log("closed");
                 break;
         }
     }
@@ -200,7 +205,7 @@ export default class SimpleModuleManager {
         let commandData = {};
         commandData.type = "addLink";
         commandData.data = {
-            entryType: this.getModuleType(),
+            entryType: MODULE_TYPE,
             url: moduleIdentifier, //url for ES module, module name for NPM module
             name: moduleName
         };
@@ -214,7 +219,7 @@ export default class SimpleModuleManager {
         let commandData = {};
         commandData.type = "updateLink";
         commandData.data = {
-            entryType: this.getModuleType(),
+            entryType: MODULE_TYPE,
             url: newModuleIdentifier, //url for ES module, module name for NPM module
             name: moduleName,
         };
@@ -225,7 +230,7 @@ export default class SimpleModuleManager {
     unloadModule(moduleIdentifier) {
         let commandData = {};
         commandData.type = "deleteLink";
-        commandData.entryType = this.getModuleType();
+        commandData.entryType = MODULE_TYPE;
         commandData.url = moduleIdentifier; //note this is module name for npm
         return this.app.executeCommand(commandData);
     }
@@ -236,4 +241,7 @@ export default class SimpleModuleManager {
 
 
 const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
-const WEB_MODULE_TYPE = "web apogee module";
+//const REMOTE_MODULE_MANAGER_URL = "http://localhost:8889/apogeejs-admin/dev/moduleManager/moduleMgr.html";
+const MODULE_TYPE = "apogee module";
+const ES_PLATFORM = "es";
+const NODE_PLATFORM = "node";
