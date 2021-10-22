@@ -16,8 +16,7 @@ export default class SimpleModuleManager {
     /** This opens the module manager window and sets up communication with it. */
     async openModuleManager() {
         try {
-            let appModulesData = await this.getAppModulesData();
-            this.childWindow = window.open(this.getModuleManagerUrl(appModulesData), 'Module Manager - ' + this.childWindowId, 'width=768,height=768,left=200,top=100');
+            this.childWindow = window.open(this.getModuleManagerUrl(), 'Module Manager - ' + this.childWindowId, 'width=768,height=768,left=200,top=100');
         }
         catch(error) {            
             if(error.stack) console.error(error.stack);
@@ -31,17 +30,46 @@ export default class SimpleModuleManager {
     //==========================
 
     async getAppModulesData() {
-        let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
-        let moduleList = referenceManager.getModuleList(MODULE_TYPE);
+        // let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
+        // let moduleList = referenceManager.getModuleList(MODULE_TYPE);
+        // let appModuleData = {
+        //     app: "TBD",
+        //     version: "TBD",
+        //     loaded: moduleList
+        // }
+
         let appModuleData = {
-            app: "TBD",
-            version: "TBD",
-            modules: moduleList
+            "loaded": [
+                {
+                    "moduleName": "apogeejs-module-chartjs",
+                    "moduleType": "apogee module",
+                    "version": "4.0.0-p2",
+                    "es": {
+                        "url": "http://localhost:8888/apogeejs-module-chartjs/src/ChartJSComponentModule2.js",
+                        "demoWorkspaces": [
+                            {
+                                "url": "http://localhost:8888/apogeejs-module-chartjs/chartDemoWorkspaceLocal.json"
+                            }
+                        ]
+                    },
+                    "node": {
+                        "url": "http://localhost:8888/apogeejs-module-chartjs/releases-dev/v4.0.0-p2/npm/apogeejs-module-chartjs-4.0.0-p1.tgz"
+                    },
+                    "webLink": "https://apogeejs.com"
+                },
+                {
+                    "moduleName": "multi-login-component",
+                    "version": "2.0.0-p1",
+                    "es": {
+                        "url": "http://localhost:8888/apogeejs-admin/dev/moduleCreator/multiComponent/MultiLoginComponentModule.js"
+                    }
+                }
+            ]
         }
         return appModuleData;
     }
 
-    getModuleManagerUrl(appModulesData) {
+    getModuleManagerUrl() {
         let platform = this.getPlatform();
         let windowId = this.childWindowId;
         let callingUrl = location.protocol + "//" + location.host + location.pathname;
