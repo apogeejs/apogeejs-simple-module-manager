@@ -41,27 +41,33 @@ export default class SimpleModuleManager {
         let appModuleData = {
             "loaded": [
                 {
-                    "moduleName": "apogeejs-module-chartjs",
+                    "name": "apogeejs-module-chartjs",
                     "moduleType": "apogee module",
-                    "version": "4.0.0-p2",
-                    "es": {
+                    "platform": "es",
+                    "versionData": {
+                        "version": "4.0.0-p.2",
                         "url": "http://localhost:8888/apogeejs-module-chartjs/src/ChartJSComponentModule2.js",
                         "demoWorkspaces": [
                             {
                                 "url": "http://localhost:8888/apogeejs-module-chartjs/chartDemoWorkspaceLocal.json"
                             }
-                        ]
+                        ],
+                        "webLink": "https://apogeejs.com"
                     },
-                    "node": {
-                        "url": "http://localhost:8888/apogeejs-module-chartjs/releases-dev/v4.0.0-p2/npm/apogeejs-module-chartjs-4.0.0-p1.tgz"
-                    },
-                    "webLink": "https://apogeejs.com"
+                    "sourceData": {
+                        "name": "test repo"
+                    }
                 },
                 {
-                    "moduleName": "multi-login-component",
-                    "version": "2.0.0-p1",
-                    "es": {
+                    "name": "multi-login-component",
+                    "moduleType": "apogee module",
+                    "platform": "es",
+                    "versionData": {
+                        "version": "2.0.0-p.1",
                         "url": "http://localhost:8888/apogeejs-admin/dev/moduleCreator/multiComponent/MultiLoginComponentModule.js"
+                    },
+                    "sourceData": {
+                        "name": "test repo"
                     }
                 }
             ]
