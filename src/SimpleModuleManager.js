@@ -29,16 +29,26 @@ export default class SimpleModuleManager {
     // Protected Methods
     //==========================
 
-    async getAppModulesData() {
+    async getInitModulesData() {
+        let initModulesData = {
+            platform: this.getPlatform(),
+            repositories: [
+                "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleDataTest.json"
+            ]
+        }
+        return initModulesData;
+    }
+
+    async getAppStatusData() {
         // let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
         // let moduleList = referenceManager.getModuleList(MODULE_TYPE);
-        // let appModuleData = {
+        // let appStatusData = {
         //     app: "TBD",
         //     version: "TBD",
         //     loaded: moduleList
         // }
 
-        let appModuleData = {
+        let appStatusData = {
             "loaded": [
                 {
                     "name": "apogeejs-module-chartjs",
@@ -72,14 +82,16 @@ export default class SimpleModuleManager {
                 }
             ]
         }
-        return appModuleData;
+        return appStatusData;
     }
 
     getModuleManagerUrl() {
-        let platform = this.getPlatform();
         let windowId = this.childWindowId;
         let callingUrl = location.protocol + "//" + location.host + location.pathname;
-        return REMOTE_MODULE_MANAGER_URL + `?windowId=${windowId}&platform=${platform}&callingUrl=${callingUrl}`;
+
+        //return REMOTE_MODULE_MANAGER_URL + `?windowId=${windowId}&platform=${platform}&callingUrl=${callingUrl}`;
+        let connector =  (REMOTE_MODULE_MANAGER_URL.indexOf("?") >= 0) ? "&" : "?";
+        return `${REMOTE_MODULE_MANAGER_URL}${connector}windowId=${windowId}&callingUrl=${callingUrl}`;
     }
 
     getPlatform() {
@@ -93,7 +105,8 @@ export default class SimpleModuleManager {
         let commandData = event.data.value.commandData; 
         switch(event.data.message) {
             case "opened":
-                this.sendModulesUpdate(); 
+                this.sendInitData();
+                this.sendStatusUpdate(); 
                 break;
 
             case "loadModule": 
@@ -122,10 +135,17 @@ export default class SimpleModuleManager {
         }
     }
 
-    async sendModulesUpdate() {
+    async sendInitData() {
         if(this.childWindow) {
-            let appModulesData = await this.getAppModulesData();
-            this.childWindow.postMessage({message: "appModules", value: appModulesData},REMOTE_MODULE_MANAGER_URL);
+            let initModulesData = await this.getInitModulesData();
+            this.childWindow.postMessage({message: "initModules", value: initModulesData},REMOTE_MODULE_MANAGER_URL);
+        }
+    }
+
+    async sendStatusUpdate() {
+        if(this.childWindow) {
+            let appStatusData = await this.getAppStatusData();
+            this.childWindow.postMessage({message: "appStatus", value: appStatusData},REMOTE_MODULE_MANAGER_URL);
         }
     }
 
@@ -274,7 +294,7 @@ export default class SimpleModuleManager {
 }
 
 
-const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
+const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-web-app/web/apogeeDev.html?url=http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleManagerWorkspace.json";
 //const REMOTE_MODULE_MANAGER_URL = "http://localhost:8889/apogeejs-admin/dev/moduleManager/moduleMgr.html";
 const MODULE_TYPE = "apogee module";
 const ES_PLATFORM = "es";
