@@ -40,48 +40,14 @@ export default class SimpleModuleManager {
     }
 
     async getAppStatusData() {
-        // let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
-        // let moduleList = referenceManager.getModuleList(MODULE_TYPE);
-        // let appStatusData = {
-        //     app: "TBD",
-        //     version: "TBD",
-        //     loaded: moduleList
-        // }
-
+        let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
+        let moduleList = referenceManager.getModuleList(MODULE_TYPE);
         let appStatusData = {
-            "loaded": [
-                {
-                    "name": "apogeejs-module-chartjs",
-                    "moduleType": "apogee module",
-                    "platform": "es",
-                    "versionData": {
-                        "version": "4.0.0-p.2",
-                        "url": "http://localhost:8888/apogeejs-module-chartjs/src/ChartJSComponentModule2.js",
-                        "demoWorkspaces": [
-                            {
-                                "url": "http://localhost:8888/apogeejs-module-chartjs/chartDemoWorkspaceLocal.json"
-                            }
-                        ],
-                        "webLink": "https://apogeejs.com"
-                    },
-                    "sourceData": {
-                        "name": "test repo"
-                    }
-                },
-                {
-                    "name": "multi-login-component",
-                    "moduleType": "apogee module",
-                    "platform": "es",
-                    "versionData": {
-                        "version": "2.0.0-p.1",
-                        "url": "http://localhost:8888/apogeejs-admin/dev/moduleCreator/multiComponent/MultiLoginComponentModule.js"
-                    },
-                    "sourceData": {
-                        "name": "test repo"
-                    }
-                }
-            ]
+            app: "TBD",
+            version: "TBD",
+            loaded: moduleList
         }
+
         return appStatusData;
     }
 
@@ -109,15 +75,15 @@ export default class SimpleModuleManager {
                 this.sendStatusUpdate(); 
                 break;
 
-            case "loadModule": 
+            case "loadApogeeModule": 
                 this.loadModuleCommand(commandData);
                 break;
 
-            case "unloadModule": 
+            case "unloadApogeeModule": 
                 this.unloadModuleCommand(commandData);
                 break;
 
-            case "updateModule": 
+            case "updateApogeeModule": 
                 this.updateModuleCommand(commandData);
                 break;
 
@@ -159,14 +125,10 @@ export default class SimpleModuleManager {
     //--------------------
 
     loadModuleCommand(commandData) {
-        if(!commandData.moduleIdentifier) {
-            apogeeUserAlert("Load module failed: missing module identifier.");
-            return;
-        }
         try {
-            let cmdDone = this.loadModule(commandData.moduleIdentifier,commandData.moduleName);
+            let cmdDone = this.loadModule(commandData);
             if(cmdDone) {
-                this.sendModulesUpdate();
+                this.sendStatusUpdate();
             }
         }
         catch(error) {
@@ -177,18 +139,18 @@ export default class SimpleModuleManager {
     }
 
     updateModuleCommand(commandData) {
-        if(!commandData.oldIdentifier) {
-            apogeeUserAlert("Update module failed: missing original module identifier.");
+        if(!commandData.entryId) {
+            apogeeUserAlert("Update module failed: missing module entry ID.");
             return;
         }
-        if(!commandData.newIdentifier) {
-            apogeeUserAlert("Update module failed: missing new module identifier.");
+        if(!commandData.referenceData) {
+            apogeeUserAlert("Update module failed: missing new module reference data.");
             return;
         }
         try {
-            let cmdDone = this.updateModule(commandData.newIdentifier,commandData.oldIdentifier,commandData.moduleName);
+            let cmdDone = this.updateModule(commandData.entryId,commandData.referenceData);
             if(cmdDone) {
-                this.sendModulesUpdate();
+                this.sendStatusUpdate();
             }
         }
         catch(error) {
@@ -199,15 +161,15 @@ export default class SimpleModuleManager {
     }
 
     unloadModuleCommand(commandData) {
-        if(!commandData.moduleIdentifier) {
-            apogeeUserAlert("Unload module failed: missing module identifier.");
+        if(!commandData.entryId) {
+            apogeeUserAlert("Unload module failed: missing module entry ID.");
             return;
         }
 
         try {
-            let cmdDone = this.unloadModule(commandData.moduleIdentifier);
+            let cmdDone = this.unloadModule(commandData.entryId);
             if(cmdDone) {
-                this.sendModulesUpdate();
+                this.sendStatusUpdate();
             }
         }
         catch(error) {
@@ -255,37 +217,29 @@ export default class SimpleModuleManager {
     // Command Execution Functions
     //--------------------------
 
-    loadModule(moduleIdentifier,moduleName) {
+    loadModule(referenceData) {
         let commandData = {};
         commandData.type = "addLink";
-        commandData.data = {
-            entryType: MODULE_TYPE,
-            url: moduleIdentifier, //url for ES module, module name for NPM module
-            name: moduleName
-        };
+        commandData.entryType = MODULE_TYPE
+        commandData.data = referenceData
         return this.app.executeCommand(commandData);
     }
 
     /** This updates the module, changing the "identifier" which is the url for an ES modulea and the
      * module name for an NPM module. This is only intended for ES modules, to update the url. To update
      * an NPM module it must be reinstalled in the app, and the reference entry does not change. */
-    updateModule(newModuleIdentifier,oldModuleIdentifier,moduleName) {
+    updateModule(entryId,newReferenceData) {
         let commandData = {};
         commandData.type = "updateLink";
-        commandData.data = {
-            entryType: MODULE_TYPE,
-            url: newModuleIdentifier, //url for ES module, module name for NPM module
-            name: moduleName,
-        };
-        commandData.initialUrl = oldModuleIdentifier; //url for ES module, module name for NPM module
+        commandData.id = entryId;
+        commandData.data = newReferenceData;
         return this.app.executeCommand(commandData);
     }
 
-    unloadModule(moduleIdentifier) {
+    unloadModule(entryId) {
         let commandData = {};
         commandData.type = "deleteLink";
-        commandData.entryType = MODULE_TYPE;
-        commandData.url = moduleIdentifier; //note this is module name for npm
+        commandData.id = entryId;
         return this.app.executeCommand(commandData);
     }
 
