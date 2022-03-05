@@ -248,8 +248,8 @@ export default class SimpleModuleManager {
 }
 
 
-const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-web-app/web/apogeeDev.html?url=http://localhost:8888/apogeejs-admin/dev/moduleManager/airplaneModuleManagerWorkspace.json";
-//const REMOTE_MODULE_MANAGER_URL = "http://localhost:8889/apogeejs-admin/dev/moduleManager/moduleMgr.html";
+const REMOTE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-web-app/web/apogeeDev.html?url=http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleManagerWorkspace.json";
+//const REMOTE_MODULE_MANAGER_URL = "http://localhost:8889/apogeejs-admin/dev/moduleManager/moduleManagerWorkspace.html";
 const MODULE_TYPE = "apogee module";
 const ES_PLATFORM = "es";
 const NODE_PLATFORM = "node";
